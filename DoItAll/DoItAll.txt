@@ -1,0 +1,34 @@
+## Title: DoItAll
+## APIVersion: 100026 100027
+## Version: 1.67
+## AddOnVersion: 167
+## Author: Thenedus, modified by Baertram
+## Description: Perform various operations on all items
+## SavedVariables: DoItAllSV
+## DependsOn: LibAddonMenu-2.0 LibLoadedAddons
+## OptionalDependsOn: ItemSaver FCOItemSaver TweakIt AutoCategory
+## FastAPI : 100027
+
+src/bindings.xml
+src/Settings.lua
+src/Common/ItemFilter.lua
+src/Common/Slots.lua
+src/BankAll/Transfer.lua
+src/BankAll/Keybind.lua
+src/AttachAll/Mailer.lua
+src/AttachAll/Attach.lua
+src/AttachAll/Keybind.lua
+src/ExtractAll/Extraction.lua
+src/TradeAll/Trade.lua
+src/TradeAll/Keybind.lua
+src/LaunderAll/Launder.lua
+src/LaunderAll/Keybind.lua
+src/JunkMarkAll/JunkMark.lua
+src/JunkMarkAll/Keybind.lua
+src/HouseBankAll/Transfer.lua
+src/HouseBankAll/Keybind.lua
+DoItAll.lua
+
+# This Add-on is not created by, affiliated with or sponsored by ZeniMax Media Inc. or its affiliates.
+# The Elder Scrolls and related logos are registered trademarks or trademarks of ZeniMax Media Inc.
+# in the United States and/or other countries. All rights reserved.
