@@ -9,62 +9,70 @@ local origAddToCraftSound = SOUNDS.SMITHING_ITEM_TO_EXTRACT_PLACED
 --  Keybindings
 --======================================================================================================================
 local function GetKeyStripName()
-    local mode = SMITHING.mode
-    local enchantMode = ENCHANTING.enchantingMode
     local useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
     local suppressAskBeforeExtractAllDialog = (useZOsVanillaUIForMulticraft and DoItAll.Settings["GetSuppressAskBeforeExtractDialog"]()) or false
     local retVarStr = ""
-    if useZOsVanillaUIForMulticraft then
-        if suppressAskBeforeExtractAllDialog then
-            retVarStr = "Extract all (Multi - NO WARNING!)"
-        else
-            retVarStr = "Extract all (Multi)"
-        end
-    else
-        retVarStr = "Extract all (Indiv.)"
-    end
-    if mode == SMITHING_MODE_REFINMENT then
-        if useZOsVanillaUIForMulticraft then
-            if suppressAskBeforeExtractAllDialog then
-                retVarStr = "Refine all (Multi - NO WARNING!)"
+    local currentScene = SCENE_MANAGER.currentScene.name
+    if currentScene == "enchanting" or DoItAll.IsShowingExtraction() then
+        local enchantMode = ENCHANTING.enchantingMode
+        if enchantMode == ENCHANTING_MODE_EXTRACTION then
+            if useZOsVanillaUIForMulticraft then
+                if suppressAskBeforeExtractAllDialog then
+                    retVarStr = "Extract all (Multi - NO WARNING!)"
+                else
+                    retVarStr = "Extract all (Multi)"
+                end
             else
-                retVarStr = "Refine all (Multi)"
+                retVarStr = "Extract all (Indiv.)"
             end
-        else
-            retVarStr = "Refine all (Indiv.)"
+            return retVarStr
         end
-        return retVarStr
-    elseif mode == SMITHING_MODE_DECONSTRUCTION then
-        if useZOsVanillaUIForMulticraft then
-            if suppressAskBeforeExtractAllDialog then
-                retVarStr = "Deconstr. all (Multi - NO WARNING!)"
+    elseif currentScene == "smithing" then
+        local mode = SMITHING.mode
+        if mode == SMITHING_MODE_REFINMENT then
+            if useZOsVanillaUIForMulticraft then
+                if suppressAskBeforeExtractAllDialog then
+                    retVarStr = "Refine all (Multi - NO WARNING!)"
+                else
+                    retVarStr = "Refine all (Multi)"
+                end
             else
-                retVarStr = "Deconstr. all (Multi)"
+                retVarStr = "Refine all (Indiv.)"
             end
-        else
-            retVarStr = "Deconstr. all (Indiv.)"
+            return retVarStr
+        elseif mode == SMITHING_MODE_DECONSTRUCTION then
+            if useZOsVanillaUIForMulticraft then
+                if suppressAskBeforeExtractAllDialog then
+                    retVarStr = "Deconstr. all (Multi - NO WARNING!)"
+                else
+                    retVarStr = "Deconstr. all (Multi)"
+                end
+            else
+                retVarStr = "Deconstr. all (Indiv.)"
+            end
+            return retVarStr
         end
-        return retVarStr
     end
-    if enchantMode == ENCHANTING_MODE_EXTRACTION then
-        return retVarStr
-    end
-    return retVarStr
+    return nil
 end
 
 local function ShouldShow()
-    local mode = SMITHING.mode
-    local enchantMode = ENCHANTING.enchantingMode
-
-    if mode == SMITHING_MODE_REFINMENT then
-        return true
-    elseif mode == SMITHING_MODE_DECONSTRUCTION then
-        return true
+    local retVar = false
+    local currentScene = SCENE_MANAGER.currentScene.name
+    if currentScene == "enchanting" or DoItAll.IsShowingExtraction() then
+        local enchantMode = ENCHANTING.enchantingMode
+        if enchantMode == ENCHANTING_MODE_EXTRACTION then
+            retVar = true
+        end
+    elseif currentScene == "smithing" then
+        local mode = SMITHING.mode
+        if mode == SMITHING_MODE_REFINMENT then
+            retVar = true
+        elseif mode == SMITHING_MODE_DECONSTRUCTION then
+            retVar = true
+        end
     end
-    if enchantMode == ENCHANTING_MODE_EXTRACTION then
-        return true
-    end
-    return false
+    return retVar
 end
 
 local keystripDef = {
