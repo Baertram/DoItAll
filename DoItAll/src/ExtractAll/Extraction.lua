@@ -4,6 +4,7 @@ local extractFunction, container, craftingTableCtrlVar, craftingTablePanel
 local addedToCraftCounter = 0
 local goOnLaterWithExtraction = false
 local extractNextCalls = 0
+local origAddToCraftSound = SOUNDS.SMITHING_ITEM_TO_EXTRACT_PLACED
 --======================================================================================================================
 --  Keybindings
 --======================================================================================================================
@@ -65,6 +66,19 @@ table.insert(SMITHING.keybindStripDescriptor, keystripDef)
 table.insert(ENCHANTING.keybindStripDescriptor, keystripDef)
 
 
+--======================================================================================================================
+-- Other
+--======================================================================================================================
+local function extractionSoundHack(enable, play)
+    if enable then
+        SOUNDS.SMITHING_ITEM_TO_EXTRACT_PLACED = origAddToCraftSound
+        if play then
+            PlaySound(SOUNDS.SMITHING_ITEM_TO_EXTRACT_PLACED)
+        end
+    else
+        SOUNDS.SMITHING_ITEM_TO_EXTRACT_PLACED = SOUNDS.NONE
+    end
+end
 
 --======================================================================================================================
 -- Extraction
@@ -101,60 +115,71 @@ end
 
 local function ExtractionFinished(wasError)
     wasError = wasError or false
+d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
     --No extraction was started? Then unregister old events which might have been get stuck due to lua errors!
-    if not DoItAll.extractionActive or extractFunction == nil or container == nil or craftingTableCtrlVar == nil
-        or craftingTablePanel == nil or (DoItAllSlots.IsEmpty and DoItAllSlots:IsEmpty()) then
+    if wasError or not DoItAll.extractionActive or extractFunction == nil or container == nil
+        or craftingTableCtrlVar == nil or craftingTablePanel == nil then
+d("<ABORT!")
+        DoItAll.extractionActive = false
         goOnLaterWithExtraction = false
         EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftCompleted", EVENT_CRAFT_COMPLETED)
         --UNregister the crafting start event to check if an error happened later on
         --EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftStarted", EVENT_CRAFT_STARTED)
         --Unregister the crafting failed event to check if some variables need to be resetted
         EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftFailed", EVENT_CRAFT_FAILED)
+        --ReEnable the sound
+        extractionSoundHack(true, false)
         return
     end
-    local useZOsVanillaUIForMulticraft
-    local wasExtracted = false
---d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
-    if not wasError then
-        useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
-        if useZOsVanillaUIForMulticraft then
-            --Extract the slotted items now
-            if DoItAll.IsShowingRefinement() and craftingTablePanel.ConfirmRefine then
-                craftingTablePanel:ConfirmRefine()
-                wasExtracted = true
-            else
-                if craftingTablePanel.extractionSlot then
-                    if craftingTablePanel.extractionSlot:HasOneItem() then
+    local nothingToExtract = true
+    local useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
+    local suppressAskBeforeExtractAllDialog = (useZOsVanillaUIForMulticraft and DoItAll.SuppressAskBeforeExtractDialog()) or false
+    if useZOsVanillaUIForMulticraft then
+        --Extract the slotted items now
+        if craftingTablePanel.extractionSlot then
+            local extractionSlot = craftingTablePanel.extractionSlot
+            if extractionSlot:HasItems() then
+                --ReEnable the sound and play it once now
+                extractionSoundHack(true, true)
+                if DoItAll.IsShowingRefinement() then
+                    if not suppressAskBeforeExtractAllDialog and craftingTablePanel.ConfirmRefine then
+                        craftingTablePanel:ConfirmRefine()
+                        nothingToExtract = false
+                    elseif suppressAskBeforeExtractAllDialog and craftingTablePanel.ExtractAll then
+                        craftingTablePanel:ExtractAll()
+                        nothingToExtract = false
+                    end
+                else
+                    if extractionSlot:HasOneItem() then
                         if craftingTablePanel.ExtractSingle then
                             craftingTablePanel:ExtractSingle()
-                            wasExtracted = true
+                            nothingToExtract = false
                         else
                             if craftingTablePanel.ConfirmExtractAll then
                                 craftingTablePanel:ConfirmExtractAll()
-                                wasExtracted = true
+                                nothingToExtract = false
                             end
                         end
-                    elseif craftingTablePanel.extractionSlot:HasMultipleItems() then
+                    elseif extractionSlot:HasMultipleItems() then
                         if craftingTablePanel.ConfirmExtractAll then
                             craftingTablePanel:ConfirmExtractAll()
-                            wasExtracted = true
+                            nothingToExtract = false
                         end
                     else
-                        goOnLaterWithExtraction = false
-                        wasExtracted = true
+                        nothingToExtract = true
                     end
-                else
-                    goOnLaterWithExtraction = false
-                    wasExtracted = true
                 end
+            else
+                nothingToExtract = true
             end
         else
-            goOnLaterWithExtraction = false
-            wasExtracted = true
+            nothingToExtract = true
         end
+    else
+        goOnLaterWithExtraction = false
     end
     --Security check toi prevent endless loop if the extraction functions did not work or exist anymore
-    if not wasExtracted then
+    if nothingToExtract then
         goOnLaterWithExtraction = false
     end
     --Unregister the events for the extraction but only if we are not waiting for possible next slots to extract after the current ones
@@ -174,9 +199,12 @@ end
 local function OnCraftingEnd(eventCode, wasError)
 --d("[DoItAll] OnCraftingEnd - Extraction")
 	if DoItAll.extractionActive then
-		d("[DoItAll] Extraction was aborted!")
+		local whatWasAbortedText = GetKeyStripName()
+        d("[DoItAll] \'" .. tostring(whatWasAbortedText) .. "\' was aborted!")
 		ExtractionFinished(wasError)
 	end
+    --ReEnable the sound add to craft again
+    extractionSoundHack(true, false)
 end
 
 --Callback function for EVENT_CRAFT_STARTED
@@ -195,7 +223,7 @@ end
 local function ExtractNext(firstExtract)
     extractNextCalls = extractNextCalls +1
     firstExtract = firstExtract or false
---d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
+d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
     --Prevent "hang up extractions" from last crafting station visit activating extraction all slots if something else was crafted!
     if not DoItAll.extractionActive then
         addedToCraftCounter = 999
@@ -210,7 +238,7 @@ local function ExtractNext(firstExtract)
     --get the next slot to extract
     local doitall_slot = GetNextSlotToExtract()
     if not doitall_slot then
---d("<<<NO SLOT LEFT-> FINISHED!")
+d("<<<NO SLOT LEFT-> FINISHED!")
         --No slot left -> Finish here
         goOnLaterWithExtraction = false
         ExtractionFinished()
@@ -247,12 +275,16 @@ local function ExtractNext(firstExtract)
                     if extractionSlot:GetNumItems() >= MAX_ITEM_SLOTS_PER_DECONSTRUCTION or (extractionSlot:HasItems() and not stackCountCanBeAdded) then
                         --Security check to prevent endless loops!
                         if addedToCraftCounter > 0 then
+d("<ExtractionFinished because no more items can be slotted/stackCount max reached!")
                             goOnLaterWithExtraction = true
                             --Extract the 100 items now and then goOn with the next up to 100 items
                             ExtractionFinished(false)
                         end
                     else
                         addedToCraftCounter = addedToCraftCounter + 1
+d(">Added item count: " ..tostring(addedToCraftCounter))
+                        --Change the sound for "Add item to craft" to NONE so adding multiple items won't be THAT LOUD...
+
                         --Only add the item to the extraction slot
                         craftingTableCtrlVar:AddItemToCraft(doitall_slot.bagId, doitall_slot.slotIndex)
                         --Disallow this item to be tried to added for extraction again in next call to ExtractNext
@@ -261,7 +293,7 @@ local function ExtractNext(firstExtract)
                         ExtractNext(false)
                     end
                 end
-
+------------------------------------------------------------------------------------------------------------------------
             else
                 --Use DoItALL to extract 1 item after another
                 if not firstExtract then
@@ -291,6 +323,8 @@ local function StartExtraction()
 --d("[DoItAll]StartExtraction")
     --Set global variable to see if DoItAll extraction is active
     DoItAll.extractionActive = true
+    --Disable the "Add to slot sound" so it will not be EXTREMELY LOUD if multiple items get added in a loop
+    extractionSoundHack(false, false)
     --Register the crafting start event to check if an error happened later on
     --EVENT_MANAGER:RegisterForEvent("DoItAllExtractionCraftStarted", EVENT_CRAFT_STARTED, OnSingleCraftStarted)
     --Register the crafting failed event to check if some variables need to be resetted
