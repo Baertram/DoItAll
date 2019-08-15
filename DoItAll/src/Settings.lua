@@ -10,7 +10,8 @@ DoItAll.Settings.DefaultOptions = {
   UseFCOISFilterPanelChecks = false,
   KeepResearchableItems = true,
   SendMailFull = false,
-  SendMailEnd = false
+  SendMailEnd = false,
+  UseZOsMulticraft = false
 }
 
 local function CreateControl(setting, name, tooltip, data, disabledChecks)
@@ -51,6 +52,7 @@ local function SetupOptionsMenu()
 
   local optionsData = {
     CreateHeader("General"),
+    CreateCheckbox("UseZOsMulticraft", "Use vanilla UI multicraft keybind", "Use the vanilla UI multicraft if you press the keybind to extract all"),
     CreateCheckbox("RespectItemSaver", "Keep saved items", "Do not handle items that are saved with Item Saver/FCO ItemSaver."),
     CreateCheckbox("UseFCOISFilterPanelChecks", "Use FCO ItemSaver panel checks", "Check items marked with FCO ItemSaver for the actual filter panel anti-settings (mail, trade, extract, sell, etc.), instead of only checking if the item got any of the FCOIS marker icons active.\n\nThis will alow you to e.g. deconstruct items even if they are marked with a marker icon, but the marker icon settings allows deconstruction."),
     --CreateCheckbox("UseISFilterSetChecks", "Use ItemSaver set checks", "Check items marked with ItemSaver for the actual filter set settings (mail, trade, extract, sell, etc.), instead of only checking if the item got any of the Itemsaver marker icons active.\n\nThis will alow you to e.g. deconstruct items even if they are marked with a marker icon, but the marker icon settings allows deconstruction in this filter set."),
@@ -81,4 +83,8 @@ function DoItAll.Settings.Initialize()
   DoItAll.Settings.Options = ZO_SavedVars:NewCharacterIdSettings("DoItAllSV", 2, nil, DoItAll.Settings.DefaultOptions, GetWorldName())
   CreateGettersAndSetters()
   SetupOptionsMenu()
+end
+
+function DoItAll.IsZOsVanillaUIMultiCraftEnabled()
+  return DoItAll.Settings["GetUseZOsMulticraft"]() or false
 end

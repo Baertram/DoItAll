@@ -1,6 +1,6 @@
 DoItAll = DoItAll or {}
 DoItAll.AddOnName = "DoItAll"
-DoItAll.AddOnVersion = 1.67
+DoItAll.AddOnVersion = 1.69
 DoItAll.FCOIS = {}
 DoItAll.FCOIS.FCOItemSaver_DeconstructionSelectionHandlerVersion = 0.879
 DoItAll.FCOIS.deconstructionSelectionHandlerSupported = false
@@ -17,6 +17,7 @@ local function Loaded(_, loadedAddon)
         --Load libLoadedAddons
         local LIBLA = LibLoadedAddons
         if LIBLA == nil and LibStub then LIBLA = LibStub:GetLibrary("LibLoadedAddons") end
+        if LIBLA == nil then d("[" .. DoItAll.AddOnName .. "]ERROR Needed library LibLoadedAddons not found. Addon is not working properly! ") return end
         --LibAddonMenu-2.0
         DoItAll.LAM = LibAddonMenu2
         if DoItAll.LAM == nil and LibStub then DoItAll.LAM = LibStub("LibAddonMenu-2.0") end
@@ -24,9 +25,12 @@ local function Loaded(_, loadedAddon)
         LIBLA:RegisterAddon(DoItAll.AddOnName, DoItAll.AddOnVersion)
         DoItAll.LIBLA = LIBLA
         --Check if FCOItemSaver is loaded in the version that supports the global DeconstructionSelectionHandler
-        DoItAll.FCOIS.loaded, DoItAll.FCOIS.version = LIBLA:IsAddonLoaded("FCOItemSaver")
-        if FCOIS and DoItAll.FCOIS.loaded and DoItAll.FCOIS.version >= DoItAll.FCOIS.FCOItemSaver_DeconstructionSelectionHandlerVersion then
-            DoItAll.FCOIS.deconstructionSelectionHandlerSupported = true
+        if FCOIS then
+            local DoItAllFCOIS = DoItAll.FCOIS
+            DoItAllFCOIS.loaded, DoItAllFCOIS.version = LIBLA:IsAddonLoaded(FCOIS.addonVars.gAddonName)
+            if DoItAllFCOIS.loaded and DoItAllFCOIS.version >= DoItAllFCOIS.FCOItemSaver_DeconstructionSelectionHandlerVersion then
+                DoItAll.FCOIS.deconstructionSelectionHandlerSupported = true
+            end
         end
         Initialize()
     end
