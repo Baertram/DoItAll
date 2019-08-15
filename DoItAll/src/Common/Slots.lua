@@ -150,3 +150,7 @@ function DoItAll.Slots:ForEach(fct)
   end
   return true
 end
+
+function DoItAll.Slots:IsEmpty()
+    return self:Empty()
+end

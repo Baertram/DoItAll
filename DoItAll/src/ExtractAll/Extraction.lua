@@ -15,20 +15,20 @@ local function GetKeyStripName()
     if useZOsVanillaUIForMulticraft then
         retVarStr = "Extract all (Multi)"
     else
-        retVarStr = "Extract all (DoItAll)"
+        retVarStr = "Extract all (Indiv.)"
     end
     if mode == SMITHING_MODE_REFINMENT then
         if useZOsVanillaUIForMulticraft then
             retVarStr = "Refine all (Multi)"
         else
-            retVarStr = "Refine all (DoItAll)"
+            retVarStr = "Refine all (Indiv.)"
         end
         return retVarStr
     elseif mode == SMITHING_MODE_DECONSTRUCTION then
         if useZOsVanillaUIForMulticraft then
             retVarStr = "Deconstr. all (Multi)"
         else
-            retVarStr = "Deconstr. all (DoItAll)"
+            retVarStr = "Deconstr. all (Indiv.)"
         end
         return retVarStr
     end
@@ -102,7 +102,8 @@ end
 local function ExtractionFinished(wasError)
     wasError = wasError or false
     --No extraction was started? Then unregister old events which might have been get stuck due to lua errors!
-    if not DoItAll.extractionActive then
+    if not DoItAll.extractionActive or extractFunction == nil or container == nil or craftingTableCtrlVar == nil
+        or craftingTablePanel == nil or (DoItAllSlots.IsEmpty and DoItAllSlots:IsEmpty()) then
         goOnLaterWithExtraction = false
         EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftCompleted", EVENT_CRAFT_COMPLETED)
         --UNregister the crafting start event to check if an error happened later on
@@ -193,17 +194,10 @@ end
 
 local function ExtractNext(firstExtract)
     extractNextCalls = extractNextCalls +1
-    if extractNextCalls > 200 then
-        DoItAll.extractionActiv = false
-        addedToCraftCounter = 20000
-        goOnLaterWithExtraction = false
-        return
-    end
     firstExtract = firstExtract or false
 --d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
     --Prevent "hang up extractions" from last crafting station visit activating extraction all slots if something else was crafted!
     if not DoItAll.extractionActive then
-        d(">1")
         addedToCraftCounter = 999
         goOnLaterWithExtraction = false
         return
