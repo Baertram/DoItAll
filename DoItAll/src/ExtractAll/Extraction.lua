@@ -12,22 +12,35 @@ local function GetKeyStripName()
     local mode = SMITHING.mode
     local enchantMode = ENCHANTING.enchantingMode
     local useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
+    local suppressAskBeforeExtractAllDialog = (useZOsVanillaUIForMulticraft and DoItAll.Settings["GetSuppressAskBeforeExtractDialog"]()) or false
     local retVarStr = ""
     if useZOsVanillaUIForMulticraft then
-        retVarStr = "Extract all (Multi)"
+        if suppressAskBeforeExtractAllDialog then
+            retVarStr = "Extract all (Multi - NO WARNING!)"
+        else
+            retVarStr = "Extract all (Multi)"
+        end
     else
         retVarStr = "Extract all (Indiv.)"
     end
     if mode == SMITHING_MODE_REFINMENT then
         if useZOsVanillaUIForMulticraft then
-            retVarStr = "Refine all (Multi)"
+            if suppressAskBeforeExtractAllDialog then
+                retVarStr = "Refine all (Multi - NO WARNING!)"
+            else
+                retVarStr = "Refine all (Multi)"
+            end
         else
             retVarStr = "Refine all (Indiv.)"
         end
         return retVarStr
     elseif mode == SMITHING_MODE_DECONSTRUCTION then
         if useZOsVanillaUIForMulticraft then
-            retVarStr = "Deconstr. all (Multi)"
+            if suppressAskBeforeExtractAllDialog then
+                retVarStr = "Deconstr. all (Multi - NO WARNING!)"
+            else
+                retVarStr = "Deconstr. all (Multi)"
+            end
         else
             retVarStr = "Deconstr. all (Indiv.)"
         end
@@ -115,11 +128,11 @@ end
 
 local function ExtractionFinished(wasError)
     wasError = wasError or false
-d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
+--d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
     --No extraction was started? Then unregister old events which might have been get stuck due to lua errors!
     if wasError or not DoItAll.extractionActive or extractFunction == nil or container == nil
         or craftingTableCtrlVar == nil or craftingTablePanel == nil then
-d("<ABORT!")
+--d("<ABORT!")
         DoItAll.extractionActive = false
         goOnLaterWithExtraction = false
         EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftCompleted", EVENT_CRAFT_COMPLETED)
@@ -133,7 +146,7 @@ d("<ABORT!")
     end
     local nothingToExtract = true
     local useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
-    local suppressAskBeforeExtractAllDialog = (useZOsVanillaUIForMulticraft and DoItAll.SuppressAskBeforeExtractDialog()) or false
+    local suppressAskBeforeExtractAllDialog = (useZOsVanillaUIForMulticraft and DoItAll.Settings["GetSuppressAskBeforeExtractDialog"]()) or false
     if useZOsVanillaUIForMulticraft then
         --Extract the slotted items now
         if craftingTablePanel.extractionSlot then
@@ -155,18 +168,18 @@ d("<ABORT!")
                             craftingTablePanel:ExtractSingle()
                             nothingToExtract = false
                         else
-                            if craftingTablePanel.ConfirmExtractAll then
-                                craftingTablePanel:ConfirmExtractAll()
-                                nothingToExtract = false
-                            end
+                            nothingToExtract = true
                         end
                     elseif extractionSlot:HasMultipleItems() then
-                        if craftingTablePanel.ConfirmExtractAll then
+                        if not suppressAskBeforeExtractAllDialog and craftingTablePanel.ConfirmExtractAll then
                             craftingTablePanel:ConfirmExtractAll()
                             nothingToExtract = false
+                        elseif suppressAskBeforeExtractAllDialog and craftingTablePanel.ExtractAll then
+                            craftingTablePanel:ExtractAll()
+                            nothingToExtract = false
+                        else
+                            nothingToExtract = true
                         end
-                    else
-                        nothingToExtract = true
                     end
                 end
             else
@@ -223,7 +236,7 @@ end
 local function ExtractNext(firstExtract)
     extractNextCalls = extractNextCalls +1
     firstExtract = firstExtract or false
-d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
+--d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
     --Prevent "hang up extractions" from last crafting station visit activating extraction all slots if something else was crafted!
     if not DoItAll.extractionActive then
         addedToCraftCounter = 999
@@ -238,7 +251,7 @@ d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActi
     --get the next slot to extract
     local doitall_slot = GetNextSlotToExtract()
     if not doitall_slot then
-d("<<<NO SLOT LEFT-> FINISHED!")
+--d("<<<NO SLOT LEFT-> FINISHED!")
         --No slot left -> Finish here
         goOnLaterWithExtraction = false
         ExtractionFinished()
@@ -275,14 +288,14 @@ d("<<<NO SLOT LEFT-> FINISHED!")
                     if extractionSlot:GetNumItems() >= MAX_ITEM_SLOTS_PER_DECONSTRUCTION or (extractionSlot:HasItems() and not stackCountCanBeAdded) then
                         --Security check to prevent endless loops!
                         if addedToCraftCounter > 0 then
-d("<ExtractionFinished because no more items can be slotted/stackCount max reached!")
+--d("<ExtractionFinished because no more items can be slotted/stackCount max reached!")
                             goOnLaterWithExtraction = true
                             --Extract the 100 items now and then goOn with the next up to 100 items
                             ExtractionFinished(false)
                         end
                     else
                         addedToCraftCounter = addedToCraftCounter + 1
-d(">Added item count: " ..tostring(addedToCraftCounter))
+--d(">Added item count: " ..tostring(addedToCraftCounter))
                         --Change the sound for "Add item to craft" to NONE so adding multiple items won't be THAT LOUD...
 
                         --Only add the item to the extraction slot
