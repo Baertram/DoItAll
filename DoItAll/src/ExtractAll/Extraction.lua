@@ -10,16 +10,32 @@ local extractNextCalls = 0
 local function GetKeyStripName()
     local mode = SMITHING.mode
     local enchantMode = ENCHANTING.enchantingMode
-
+    local useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
+    local retVarStr = ""
+    if useZOsVanillaUIForMulticraft then
+        retVarStr = "Extract all (Multi)"
+    else
+        retVarStr = "Extract all (DoItAll)"
+    end
     if mode == SMITHING_MODE_REFINMENT then
-        return "Refine all"
+        if useZOsVanillaUIForMulticraft then
+            retVarStr = "Refine all (Multi)"
+        else
+            retVarStr = "Refine all (DoItAll)"
+        end
+        return retVarStr
     elseif mode == SMITHING_MODE_DECONSTRUCTION then
-        return "Deconstr. all"
+        if useZOsVanillaUIForMulticraft then
+            retVarStr = "Deconstr. all (Multi)"
+        else
+            retVarStr = "Deconstr. all (DoItAll)"
+        end
+        return retVarStr
     end
     if enchantMode == ENCHANTING_MODE_EXTRACTION then
-        return "Extract all"
+        return retVarStr
     end
-    return "Extract all"
+    return retVarStr
 end
 
 local function ShouldShow()
@@ -85,33 +101,53 @@ end
 
 local function ExtractionFinished(wasError)
     wasError = wasError or false
+    --No extraction was started? Then unregister old events which might have been get stuck due to lua errors!
+    if not DoItAll.extractionActive then
+        goOnLaterWithExtraction = false
+        EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftCompleted", EVENT_CRAFT_COMPLETED)
+        --UNregister the crafting start event to check if an error happened later on
+        --EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftStarted", EVENT_CRAFT_STARTED)
+        --Unregister the crafting failed event to check if some variables need to be resetted
+        EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftFailed", EVENT_CRAFT_FAILED)
+        return
+    end
     local useZOsVanillaUIForMulticraft
-d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
+    local wasExtracted = false
+--d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
     if not wasError then
         useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
         if useZOsVanillaUIForMulticraft then
             --Extract the slotted items now
             if DoItAll.IsShowingRefinement() and craftingTablePanel.ConfirmRefine then
-                craftingTablePanel.ConfirmRefine()
+                craftingTablePanel:ConfirmRefine()
+                wasExtracted = true
             else
                 if craftingTablePanel.extractionSlot and craftingTablePanel.extractionSlot:HasOneItem() then
                     if craftingTablePanel.ExtractSingle then
                         craftingTablePanel:ExtractSingle()
+                        wasExtracted = true
                     else
                         if craftingTablePanel.ConfirmExtractAll then
-                            craftingTablePanel.ConfirmExtractAll()
+                            craftingTablePanel:ConfirmExtractAll()
+                            wasExtracted = true
                         end
                     end
                 else
                     if craftingTablePanel.ConfirmExtractAll then
                         craftingTablePanel.ConfirmExtractAll()
+                        wasExtracted = true
                     end
                 end
             end
+        else
+            goOnLaterWithExtraction = false
+            wasExtracted = true
         end
     end
-    --Set the global variable to false: Extraction was finished/Aborted
-    DoItAll.extractionActive = false
+    --Security check toi prevent endless loop if the extraction functions did not work or exist anymore
+    if not wasExtracted then
+        goOnLaterWithExtraction = false
+    end
     --Unregister the events for the extraction but only if we are not waiting for possible next slots to extract after the current ones
     --via ZOs vanilla UI Multicraft
     if not goOnLaterWithExtraction then
@@ -121,6 +157,8 @@ d("[DoItAll]ExtractionFinished, wasError: " ..tostring(wasError))
         --Unregister the crafting failed event to check if some variables need to be resetted
         EVENT_MANAGER:UnregisterForEvent("DoItAllExtractionCraftFailed", EVENT_CRAFT_FAILED)
     end
+    --Set the global variable to false: Extraction was finished/Aborted
+    DoItAll.extractionActive = false
 end
 
 --Event handler for EVENT_END_CRAFTING_STATION_INTERACT at extraction
@@ -154,7 +192,7 @@ local function ExtractNext(firstExtract)
         return
     end
     firstExtract = firstExtract or false
-d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
+--d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActive) .. ", firstExtract: " ..tostring(firstExtract))
     --Prevent "hang up extractions" from last crafting station visit activating extraction all slots if something else was crafted!
     if not DoItAll.extractionActive then
         d(">1")
@@ -163,24 +201,22 @@ d("[DoItAll]ExtractNext, extraction active: " .. tostring(DoItAll.extractionActi
         return
     end
     local delayMs = 0
-d(">addedToCraftCounter: " ..tostring(addedToCraftCounter))
+--d(">addedToCraftCounter: " ..tostring(addedToCraftCounter))
 
     --d("[DoItAll]ExtractNext("..tostring(firstExtract)..")")
 
     --get the next slot to extract
     local doitall_slot = GetNextSlotToExtract()
     if not doitall_slot then
-d("<<<NO SLOT LEFT-> FINISHED!")
+--d("<<<NO SLOT LEFT-> FINISHED!")
         --No slot left -> Finish here
         goOnLaterWithExtraction = false
         ExtractionFinished()
     else
         local extractable = true
         if craftingTableCtrlVar.CanItemBeAddedToCraft then
-d(">2")
             extractable = craftingTableCtrlVar:CanItemBeAddedToCraft(doitall_slot.bagId, doitall_slot.slotIndex)
         else
-d(">3")
             --Are we inside refinement?
             --Is the current slot's stackCount < 10 (no refinement is possible then)?
             if DoItAll.IsShowingRefinement() and doitall_slot.stackCount ~= nil and doitall_slot.stackCount < 10 then
@@ -188,11 +224,10 @@ d(">3")
             end
         end
         if extractable then
-d(">item is extractable: " .. GetItemLink(doitall_slot.bagId, doitall_slot.slotIndex))
+--d(">item is extractable: " .. GetItemLink(doitall_slot.bagId, doitall_slot.slotIndex))
             --Is the vanilla UI ZOs multicraft (added with Scalebreaker patch) the one to extarct all?
             --Or should DoItAll handle this like before on it's own?
             if DoItAll.IsZOsVanillaUIMultiCraftEnabled() then
-d(">4")
                 if craftingTableCtrlVar.AddItemToCraft then
                     --Code for max stack count and max deconstructable items taken from function ZO_SharedSmithingExtraction:AddItemToCraft(bagId, slotIndex)
                     -->esoui/ingame/crafting/smithingextraction_shared.lua
@@ -202,13 +237,12 @@ d(">4")
                     local stackCountPerIteration = isInRefineMode and GetRequiredSmithingRefinementStackSize() or 1
                     local maxStackCount = MAX_ITERATIONS_PER_DECONSTRUCTION * stackCountPerIteration
                     local stackCountCanBeAdded = newStackCount <= maxStackCount or false
-d(">extractionSlot has items: " .. tostring(extractionSlot:HasItems()) .. ", numItems: " .. tostring(extractionSlot:GetNumItems()) ..", stackCountCanBeAdded: " .. tostring(stackCountCanBeAdded) .. " (newStackCount: " ..tostring(newStackCount) .. ", stackCountPerIteration: " ..tostring(stackCountPerIteration) ..")")
+--d(">extractionSlot has items: " .. tostring(extractionSlot:HasItems()) .. ", numItems: " .. tostring(extractionSlot:GetNumItems()) ..", stackCountCanBeAdded: " .. tostring(stackCountCanBeAdded) .. " (newStackCount: " ..tostring(newStackCount) .. ", stackCountPerIteration: " ..tostring(stackCountPerIteration) ..")")
 
                     goOnLaterWithExtraction = false
                     -- Pevent slotting if it would take us above the MAX_ITEM_SLOTS_PER_DECONSTRUCTION or the stackCount iteration limit,
                     -- but allow it if nothing else has been slotted yet so we can support single stacks that are larger than the limit
-                    if addedToCraftCounter > 0 or (extractionSlot:GetNumItems() >= MAX_ITEM_SLOTS_PER_DECONSTRUCTION or (extractionSlot:HasItems() and not stackCountCanBeAdded)) then
-d(">100 slots added/or maximum refinable stacks added: Extracting them now and then going on with next 100")
+                    if extractionSlot:GetNumItems() >= MAX_ITEM_SLOTS_PER_DECONSTRUCTION or (extractionSlot:HasItems() and not stackCountCanBeAdded) then
                         --Security check to prevent endless loops!
                         if addedToCraftCounter > 0 then
                             goOnLaterWithExtraction = true
@@ -217,7 +251,6 @@ d(">100 slots added/or maximum refinable stacks added: Extracting them now and t
                         end
                     else
                         addedToCraftCounter = addedToCraftCounter + 1
-d(">Added! addedToCraftCounter: " ..tostring(addedToCraftCounter))
                         --Only add the item to the extraction slot
                         craftingTableCtrlVar:AddItemToCraft(doitall_slot.bagId, doitall_slot.slotIndex)
                         --Disallow this item to be tried to added for extraction again in next call to ExtractNext
@@ -244,7 +277,6 @@ d(">Added! addedToCraftCounter: " ..tostring(addedToCraftCounter))
                 end
             end
         else
-d(">Not allowed slot")
             --Disallow this item to be tried to extracted again
             DoItAllSlots:AddToNotAllowed(doitall_slot.bagId, doitall_slot.slotIndex)
             --Go on with next slot as the event EVENT_CRAFT_COMPLETED won't be called
@@ -254,7 +286,7 @@ d(">Not allowed slot")
 end
 
 local function StartExtraction()
-d("[DoItAll]StartExtraction")
+--d("[DoItAll]StartExtraction")
     --Set global variable to see if DoItAll extraction is active
     DoItAll.extractionActive = true
     --Register the crafting start event to check if an error happened later on
@@ -269,7 +301,6 @@ d("[DoItAll]StartExtraction")
                     ExtractNext(false)
                 else
                     --Shall we go on with the extraction with ZOs vanilla UI multicraft?
-d(">Going on with next 100 slots? extractWasDone: " ..tostring(extractWasDone))
                     if goOnLaterWithExtraction == true then
                         DoItAll.ExtractAll()
                     end
@@ -280,7 +311,7 @@ d(">Going on with next 100 slots? extractWasDone: " ..tostring(extractWasDone))
 end
 
 function DoItAll.ExtractAll()
-d("[DoItAll]ExtractAll")
+--d("[DoItAll]ExtractAll")
     --ZOs UI is handling the extraction
     container, extractFunction, craftingTableCtrlVar, craftingTablePanel = GetExtractionContainerFunctionCtrlAndPanel()
     if container == nil or craftingTableCtrlVar == nil then return end
