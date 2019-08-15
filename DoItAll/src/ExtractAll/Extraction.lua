@@ -122,21 +122,29 @@ local function ExtractionFinished(wasError)
                 craftingTablePanel:ConfirmRefine()
                 wasExtracted = true
             else
-                if craftingTablePanel.extractionSlot and craftingTablePanel.extractionSlot:HasOneItem() then
-                    if craftingTablePanel.ExtractSingle then
-                        craftingTablePanel:ExtractSingle()
-                        wasExtracted = true
-                    else
+                if craftingTablePanel.extractionSlot then
+                    if craftingTablePanel.extractionSlot:HasOneItem() then
+                        if craftingTablePanel.ExtractSingle then
+                            craftingTablePanel:ExtractSingle()
+                            wasExtracted = true
+                        else
+                            if craftingTablePanel.ConfirmExtractAll then
+                                craftingTablePanel:ConfirmExtractAll()
+                                wasExtracted = true
+                            end
+                        end
+                    elseif craftingTablePanel.extractionSlot:HasMultipleItems() then
                         if craftingTablePanel.ConfirmExtractAll then
                             craftingTablePanel:ConfirmExtractAll()
                             wasExtracted = true
                         end
-                    end
-                else
-                    if craftingTablePanel.ConfirmExtractAll then
-                        craftingTablePanel.ConfirmExtractAll()
+                    else
+                        goOnLaterWithExtraction = false
                         wasExtracted = true
                     end
+                else
+                    goOnLaterWithExtraction = false
+                    wasExtracted = true
                 end
             end
         else
