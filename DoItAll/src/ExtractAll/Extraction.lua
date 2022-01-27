@@ -254,7 +254,7 @@ local function ExtractNext(firstExtract)
     local delayMs = 0
 --d(">addedToCraftCounter: " ..tostring(addedToCraftCounter))
 
-    --d("[DoItAll]ExtractNext("..tostring(firstExtract)..")")
+--d("[DoItAll]ExtractNext("..tostring(firstExtract)..")")
 
     --get the next slot to extract
     local doitall_slot = GetNextSlotToExtract()

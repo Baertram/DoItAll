@@ -1,12 +1,12 @@
 ## Title: DoItAll
-## APIVersion: 100028 100029
-## Version: 1.69
-## AddOnVersion: 169
+## APIVersion: 101032 101033
+## Version: 1.71
+## AddOnVersion: 171
 ## Author: Thenedus, modified by Baertram
 ## Description: Perform various operations on all items
 ## SavedVariables: DoItAllSV
-## DependsOn: LibAddonMenu-2.0 LibLoadedAddons
-## OptionalDependsOn: ItemSaver FCOItemSaver TweakIt AutoCategory
+## DependsOn: LibAddonMenu-2.0>=32
+## OptionalDependsOn: AutoCategory FCOItemSaver>=221 ItemSaver TweakIt
 
 src/bindings.xml
 src/Settings.lua

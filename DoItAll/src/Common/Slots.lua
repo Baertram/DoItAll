@@ -97,11 +97,14 @@ end
 function DoItAll.Slots:Fill(container, limit)
     self:Init(limit)
     for _, slot in pairs(container.data) do
+        local data = slot.data
         --isHeader = added by addon "AutoCategory": collapsable catgory header
-        if not slot.data.dataEntry.isHeader then
+        if data.dataEntry and not data.dataEntry.isHeader then
+--d(">checking item: " .. GetItemLink(data.bagId, data.slotIndex))
             --Check if slot is allowed -> Else take the next one
-            local allowed = self:CheckAllowed(slot.data.bagId, slot.data.slotIndex)
+            local allowed = self:CheckAllowed(data.bagId, data.slotIndex)
             if allowed then
+--d(">>allowed!")
                 if self.filter == nil or (self.filter ~= nil and not self.filter:Filter(slot)) then
                     table.insert(self.slots, ExtractSlotData(slot))
                 end

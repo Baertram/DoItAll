@@ -40,7 +40,7 @@ end
 
 function DoItAll.MarkAllAsJunk()
   TransferAll(ZO_PlayerInventoryBackpack, "MarkAllAsJunk")
-  d("DoItAll -> MarkAllAsJunk")
+  --d("DoItAll -> MarkAllAsJunk")
 end
 
 
