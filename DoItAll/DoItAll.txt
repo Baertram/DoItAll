@@ -1,7 +1,7 @@
 ## Title: DoItAll
 ## APIVersion: 101032 101033
-## Version: 1.71
-## AddOnVersion: 171
+## Version: 1.72
+## AddOnVersion: 172
 ## Author: Thenedus, modified by Baertram
 ## Description: Perform various operations on all items
 ## SavedVariables: DoItAllSV

@@ -52,6 +52,21 @@ local function GetKeyStripName()
             end
             return retVarStr
         end
+    elseif currentScene == "universalDeconstructionSceneKeyboard" then
+        if not UNIVERSAL_DECONSTRUCTION then return end
+        local mode = UNIVERSAL_DECONSTRUCTION.mode
+        if mode == SMITHING_MODE_DECONSTRUCTION then
+            if useZOsVanillaUIForMulticraft then
+                if suppressAskBeforeExtractAllDialog then
+                    retVarStr = "Decon/Extract all (Multi - NO WARNING!)"
+                else
+                    retVarStr = "Decon/Extract all (Multi)"
+                end
+            else
+                retVarStr = "Decon/Extract all (Indiv.)"
+            end
+            return retVarStr
+        end
     end
     return nil
 end
@@ -71,6 +86,12 @@ local function ShouldShow()
         elseif mode == SMITHING_MODE_DECONSTRUCTION then
             retVar = true
         end
+    elseif currentScene == "universalDeconstructionSceneKeyboard" then
+        if not UNIVERSAL_DECONSTRUCTION then return end
+        local mode = UNIVERSAL_DECONSTRUCTION.mode
+        if mode == SMITHING_MODE_DECONSTRUCTION then
+            retVar = true
+        end
     end
     return retVar
 end
@@ -85,6 +106,9 @@ local keystripDef = {
 
 table.insert(SMITHING.keybindStripDescriptor, keystripDef)
 table.insert(ENCHANTING.keybindStripDescriptor, keystripDef)
+if UNIVERSAL_DECONSTRUCTION ~= nil then
+    table.insert(UNIVERSAL_DECONSTRUCTION.keybindStripDescriptor, keystripDef)
+end
 
 
 --======================================================================================================================
@@ -109,21 +133,27 @@ function DoItAll.IsShowingExtraction()
 end
 
 function DoItAll.IsShowingDeconstruction()
-	return not ZO_SmithingTopLevelDeconstructionPanelSlotContainer:IsHidden()
+	return ZO_Smithing_IsSceneShowing() and not ZO_SmithingTopLevelDeconstructionPanelSlotContainer:IsHidden()
 end
 
 function DoItAll.IsShowingRefinement()
-	return not ZO_SmithingTopLevelRefinementPanelSlotContainer:IsHidden()
+	return ZO_Smithing_IsSceneShowing() and not ZO_SmithingTopLevelRefinementPanelSlotContainer:IsHidden()
+end
+
+function DoItAll.IsShowingDeconNPC()
+    return not UNIVERSAL_DECONSTRUCTION.control:IsHidden()
 end
 
 local function GetExtractionContainerFunctionCtrlAndPanel()
-  if DoItAll.IsShowingExtraction() then
-    return ZO_EnchantingTopLevelInventoryBackpack, ExtractEnchantingItem, ENCHANTING, ENCHANTING
-  elseif DoItAll.IsShowingDeconstruction() then
-    return ZO_SmithingTopLevelDeconstructionPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.deconstructionPanel
-  elseif DoItAll.IsShowingRefinement() then
-    return ZO_SmithingTopLevelRefinementPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.refinementPanel
-  end
+    if UNIVERSAL_DECONSTRUCTION ~= nil and DoItAll.IsShowingDeconNPC() then
+        return ZO_UniversalDeconstructionTopLevel_KeyboardPanelInventoryBackpack, ExtractOrRefineSmithingItem, UNIVERSAL_DECONSTRUCTION, UNIVERSAL_DECONSTRUCTION.deconstructionPanel
+    elseif DoItAll.IsShowingExtraction() then
+        return ZO_EnchantingTopLevelInventoryBackpack, ExtractEnchantingItem, ENCHANTING, ENCHANTING
+    elseif DoItAll.IsShowingDeconstruction() then
+        return ZO_SmithingTopLevelDeconstructionPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.deconstructionPanel
+    elseif DoItAll.IsShowingRefinement() then
+        return ZO_SmithingTopLevelRefinementPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.refinementPanel
+    end
 end
 
 local function GetNextSlotToExtract()
@@ -221,7 +251,7 @@ local function OnCraftingEnd(eventCode, wasError)
 --d("[DoItAll] OnCraftingEnd - Extraction")
 	if DoItAll.extractionActive then
 		local whatWasAbortedText = GetKeyStripName()
-        d("[DoItAll] \'" .. tostring(whatWasAbortedText) .. "\' was aborted!")
+        --d("[DoItAll] \'" .. tostring(whatWasAbortedText) .. "\' was aborted!")
 		ExtractionFinished(wasError)
 	end
     --ReEnable the sound add to craft again
