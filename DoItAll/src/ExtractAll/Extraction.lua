@@ -8,13 +8,21 @@ local origAddToCraftSound = SOUNDS.SMITHING_ITEM_TO_EXTRACT_PLACED
 --======================================================================================================================
 --  Keybindings
 --======================================================================================================================
+local function getSmithingMode()
+    local modeObject = ZO_Smithing_GetActiveObject() or SMITHING
+    return modeObject:GetMode()
+end
+local function getEnchantingMode()
+    return ENCHANTING:GetEnchantingMode()
+end
+
 local function GetKeyStripName()
     local useZOsVanillaUIForMulticraft = DoItAll.IsZOsVanillaUIMultiCraftEnabled() or false
     local suppressAskBeforeExtractAllDialog = (useZOsVanillaUIForMulticraft and DoItAll.Settings["GetSuppressAskBeforeExtractDialog"]()) or false
     local retVarStr = ""
     local currentScene = SCENE_MANAGER.currentScene.name
     if currentScene == "enchanting" or DoItAll.IsShowingExtraction() then
-        local enchantMode = ENCHANTING.enchantingMode
+        local enchantMode = getEnchantingMode()
         if enchantMode == ENCHANTING_MODE_EXTRACTION then
             if useZOsVanillaUIForMulticraft then
                 if suppressAskBeforeExtractAllDialog then
@@ -28,7 +36,7 @@ local function GetKeyStripName()
             return retVarStr
         end
     elseif currentScene == "smithing" then
-        local mode = SMITHING.mode
+        local mode = getSmithingMode()
         if mode == SMITHING_MODE_REFINMENT then
             if useZOsVanillaUIForMulticraft then
                 if suppressAskBeforeExtractAllDialog then
@@ -52,21 +60,6 @@ local function GetKeyStripName()
             end
             return retVarStr
         end
-    elseif currentScene == "universalDeconstructionSceneKeyboard" then
-        if not UNIVERSAL_DECONSTRUCTION then return end
-        local mode = UNIVERSAL_DECONSTRUCTION.mode
-        if mode == SMITHING_MODE_DECONSTRUCTION then
-            if useZOsVanillaUIForMulticraft then
-                if suppressAskBeforeExtractAllDialog then
-                    retVarStr = "Decon/Extract all (Multi - NO WARNING!)"
-                else
-                    retVarStr = "Decon/Extract all (Multi)"
-                end
-            else
-                retVarStr = "Decon/Extract all (Indiv.)"
-            end
-            return retVarStr
-        end
     end
     return nil
 end
@@ -75,21 +68,15 @@ local function ShouldShow()
     local retVar = false
     local currentScene = SCENE_MANAGER.currentScene.name
     if currentScene == "enchanting" or DoItAll.IsShowingExtraction() then
-        local enchantMode = ENCHANTING.enchantingMode
+        local enchantMode = getEnchantingMode()
         if enchantMode == ENCHANTING_MODE_EXTRACTION then
             retVar = true
         end
     elseif currentScene == "smithing" then
-        local mode = SMITHING.mode
+        local mode = getSmithingMode()
         if mode == SMITHING_MODE_REFINMENT then
             retVar = true
         elseif mode == SMITHING_MODE_DECONSTRUCTION then
-            retVar = true
-        end
-    elseif currentScene == "universalDeconstructionSceneKeyboard" then
-        if not UNIVERSAL_DECONSTRUCTION then return end
-        local mode = UNIVERSAL_DECONSTRUCTION.mode
-        if mode == SMITHING_MODE_DECONSTRUCTION then
             retVar = true
         end
     end
@@ -106,9 +93,6 @@ local keystripDef = {
 
 table.insert(SMITHING.keybindStripDescriptor, keystripDef)
 table.insert(ENCHANTING.keybindStripDescriptor, keystripDef)
-if UNIVERSAL_DECONSTRUCTION ~= nil then
-    table.insert(UNIVERSAL_DECONSTRUCTION.keybindStripDescriptor, keystripDef)
-end
 
 
 --======================================================================================================================
@@ -133,27 +117,21 @@ function DoItAll.IsShowingExtraction()
 end
 
 function DoItAll.IsShowingDeconstruction()
-	return ZO_Smithing_IsSceneShowing() and not ZO_SmithingTopLevelDeconstructionPanelSlotContainer:IsHidden()
+	return not ZO_SmithingTopLevelDeconstructionPanelSlotContainer:IsHidden()
 end
 
 function DoItAll.IsShowingRefinement()
-	return ZO_Smithing_IsSceneShowing() and not ZO_SmithingTopLevelRefinementPanelSlotContainer:IsHidden()
-end
-
-function DoItAll.IsShowingDeconNPC()
-    return not UNIVERSAL_DECONSTRUCTION.control:IsHidden()
+	return not ZO_SmithingTopLevelRefinementPanelSlotContainer:IsHidden()
 end
 
 local function GetExtractionContainerFunctionCtrlAndPanel()
-    if UNIVERSAL_DECONSTRUCTION ~= nil and DoItAll.IsShowingDeconNPC() then
-        return ZO_UniversalDeconstructionTopLevel_KeyboardPanelInventoryBackpack, ExtractOrRefineSmithingItem, UNIVERSAL_DECONSTRUCTION, UNIVERSAL_DECONSTRUCTION.deconstructionPanel
-    elseif DoItAll.IsShowingExtraction() then
-        return ZO_EnchantingTopLevelInventoryBackpack, ExtractEnchantingItem, ENCHANTING, ENCHANTING
-    elseif DoItAll.IsShowingDeconstruction() then
-        return ZO_SmithingTopLevelDeconstructionPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.deconstructionPanel
-    elseif DoItAll.IsShowingRefinement() then
-        return ZO_SmithingTopLevelRefinementPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.refinementPanel
-    end
+  if DoItAll.IsShowingExtraction() then
+    return ZO_EnchantingTopLevelInventoryBackpack, ExtractEnchantingItem, ENCHANTING, ENCHANTING
+  elseif DoItAll.IsShowingDeconstruction() then
+    return ZO_SmithingTopLevelDeconstructionPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.deconstructionPanel
+  elseif DoItAll.IsShowingRefinement() then
+    return ZO_SmithingTopLevelRefinementPanelInventoryBackpack, ExtractOrRefineSmithingItem, SMITHING, SMITHING.refinementPanel
+  end
 end
 
 local function GetNextSlotToExtract()
@@ -251,7 +229,7 @@ local function OnCraftingEnd(eventCode, wasError)
 --d("[DoItAll] OnCraftingEnd - Extraction")
 	if DoItAll.extractionActive then
 		local whatWasAbortedText = GetKeyStripName()
-        --d("[DoItAll] \'" .. tostring(whatWasAbortedText) .. "\' was aborted!")
+        d("[DoItAll] \'" .. tostring(whatWasAbortedText) .. "\' was aborted!")
 		ExtractionFinished(wasError)
 	end
     --ReEnable the sound add to craft again
