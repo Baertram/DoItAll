@@ -6,7 +6,7 @@
 ## Description: Perform various operations on all items
 ## SavedVariables: DoItAllSV
 ## DependsOn: LibAddonMenu-2.0>=32
-## OptionalDependsOn: AutoCategory FCOItemSaver>=221 ItemSaver TweakIt
+## OptionalDependsOn: AutoCategory FCOItemSaver>=223 ItemSaver TweakIt
 
 src/bindings.xml
 src/Settings.lua

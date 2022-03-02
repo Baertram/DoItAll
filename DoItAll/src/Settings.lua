@@ -71,13 +71,13 @@ local function SetupOptionsMenu()
     CreateLAMSlider("BatchSize", "Batch Size", "The number of items to transfer in one batch.", 1, 200, 5),
     CreateLAMSlider("BatchDelay", "Batch Delay [ms]", "The number of milliseconds to wait between two batches.", 100, 1000, 10),
     CreateLAMHeader("Extract/Deconstruct/Refine All"),
-    CreateLAMCheckbox("UseZOsMulticraft", "Use vanilla UI multicraft keybind", "Use the vanilla UI multicraft if you press the keybind to extract all.\nThis will add all refinable/deconstructable/extractable items to the slot at once and process them all with 1 keybind press/mouse click.\nInformation: ZOs prevents multi refine/deconstruct/extract of batches > 100 items, so if there are more than 100 items you might need to repeat the keybind press/mouse click!\n\nIf disable the items will be extracted one slot after another, with the setup delay."),
+    CreateLAMCheckbox("UseZOsMulticraft", "Use vanilla UI multicraft", "Use the vanilla UI multicraft if you press the keybind to extract all.\nThis will add all refinable/deconstructable/extractable items to the extraction slot at once and process them all with 1 keybind press/mouse click.\nInformation: ZOs prevents multi refine/deconstruct/extract of batches > 100 items. If there are more than 100 items you might need to repeat the keybind press/mouse click!\n\nIf disabled the items will be extracted, with the setup extract delay, one slot after another."),
     CreateLAMCheckbox("SuppressAskBeforeExtractDialog", "Suppress \'Ask before multi-extract\' dialog", "Suppress the dialog which will ask if you really want to extract all the items at once.", function() return DoItAll.Settings.GetUseZOsMulticraft() end, "Enabling this will refine/deconstruct/extract all your slotted items at once, without any warning or way to get them back!"),
     CreateLAMSlider("ExtractDelay", "Extract Delay [ms]", "The number of milliseconds to wait between each extraction.\nThis does not apply to the ZOs vanilla UI multicraft extraction!", 0, 1000, 10, function() return DoItAll.Settings.GetUseZOsMulticraft() end),
-    CreateLAMCheckbox("KeepResearchableItems", "Keep researchable items", "Do not deconstruct items that are have a researchable trait (requires Research Assistant)."),
+    CreateLAMCheckbox("KeepResearchableItems", "Keep researchable items", "Do not deconstruct items that have a researchable trait (requires addon \'Research Assistant\'!)."),
     CreateLAMHeader("Attach All"),
-    CreateLAMCheckbox("SendMailFull", "Send full mails", "Send mail when all attachment slots are full."),
-    CreateLAMCheckbox("SendMailEnd", "Send mail when done", "Send mail when all items have been attached (even though not all attachment slots may have been used).")
+    CreateLAMCheckbox("SendMailFull", "Auto-send full mails", "Send mail when all attachment slots are full."),
+    CreateLAMCheckbox("SendMailEnd", "Auto-send mail when done", "Send mail when all possible (non protected) items have been attached, even though not all attachment slots may have been used.")
   }
 
   local LAM2 = DoItAll.LAM

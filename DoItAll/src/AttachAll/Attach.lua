@@ -93,7 +93,7 @@ function DoItAll.AttachAll()
 	--Mail panel is shown?
 	if not IsShowingSendMail() then return end
 	--Initiate mailer object
-	mailer = DoItAll.Mailer:New()
+	mailer = mailer or DoItAll.Mailer:New()
 	--Scan the inventory slots and add them now
 	DoItAll.RunAttachAll()
 	--Increase the "pressed keybind button" counter

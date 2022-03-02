@@ -4,11 +4,14 @@ DoItAll.Mailer = ZO_Object:Subclass()
 
 function DoItAll.Mailer:New()
   local obj = ZO_Object.New(self)
+  obj.storedSubject = nil
   obj.storedRecipient = nil
+  obj.onSuccessCallback = nil
   return obj
 end
 
 function DoItAll.Mailer:SendMail(onSuccessCallback)
+  self.onSuccessCallback = nil
   self.onSuccessCallback = onSuccessCallback
   self:StoreOrRestoreRecipient()
   self:RegisterMailSendEvents()
@@ -41,12 +44,8 @@ function DoItAll.Mailer:TryStoreEnteredRecipient()
     self.storedSubject = enteredSubject
   end
 
-  if     enteredRecipient and enteredRecipient ~= ""
-     and enteredSubject and enteredSubject ~= "" then
-    return true
-  else
-    return false
-  end
+  return ((enteredRecipient ~= nil and enteredRecipient ~= ""
+          and enteredSubject ~= nil and enteredSubject ~= "") and true) or false
 end
 
 function DoItAll.Mailer:RegisterMailSendEvents()
