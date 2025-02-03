@@ -24,4 +24,4 @@ local function FenceClosed()
 end
 
 EVENT_MANAGER:RegisterForEvent("DoItAllBank", EVENT_OPEN_FENCE, FenceOpened)
-EVENT_MANAGER:RegisterForEvent("DoItAllBank", EVENT_CLOSE_FENCE, FenceClosed)
+EVENT_MANAGER:RegisterForEvent("DoItAllBank", EVENT_CLOSE_STORE, FenceClosed)
