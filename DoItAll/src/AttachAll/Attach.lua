@@ -43,6 +43,7 @@ end
 
 local function ReportAttachmentResult(result, itemName)
   -- TODO: Use onscreen reporting instead
+  itemName = itemName or "n/a"
   if result == MAIL_ATTACHMENT_RESULT_ALREADY_ATTACHED then
     d(itemName .. ": Item is already attached")
   elseif result == MAIL_ATTACHMENT_RESULT_BOUND then
@@ -61,7 +62,11 @@ local function AttachItem(inventorySlot)
 	end
 
 	local result = QueueItemAttachment(inventorySlot.bagId, inventorySlot.slotIndex, nextFreeAttachmentSlot)
-	ReportAttachmentResult(result, inventorySlot.name)
+    local itemName = inventorySlot.name
+    if itemName == nil and inventorySlot.bagId ~= nil and inventorySlot.slotIndex ~= nil then
+        itemName = GetItemName(inventorySlot.bagId, inventorySlot.slotIndex)
+    end
+    ReportAttachmentResult(result, itemName)
 	CheckIfMailFullAndSend()
 
 	return true

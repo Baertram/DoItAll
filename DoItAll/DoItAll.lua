@@ -1,6 +1,6 @@
 DoItAll = DoItAll or {}
 DoItAll.AddOnName = "DoItAll"
-DoItAll.AddOnVersion = 1.74
+DoItAll.AddOnVersion = 1.75
 DoItAll.extractionActive = false
 
 local addonName = DoItAll.AddOnName
